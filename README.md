@@ -1,5 +1,8 @@
 # Nixie Clock Desktop Gadget
 
+<img width="840" height="472" alt="3" src="https://github.com/user-attachments/assets/6bbe43da-06d5-48b9-8eb9-606937697b78" />
+
+
 A lightweight, elegant desktop clock rendered with Cairo and GTK+3, designed to look like a vintage Nixie tube display floating directly on your desktop background.
 
 ---
