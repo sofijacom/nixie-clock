@@ -64,3 +64,7 @@ nixie-clock --layout 1 --scale 1.5 --use-12h --color "#FF3300"
 ```
 
 Run `nixie-clock --help` for the full list of available command-line flags.
+
+
+## Author
+_Mark Ulrich_ ► https://forum.puppylinux.com/viewtopic.php?t=17295
