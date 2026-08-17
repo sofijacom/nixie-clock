@@ -1,5 +1,7 @@
 # Nixie Clock Desktop Gadget
 
+<img width="850" height="476" alt="screenshot" src="https://github.com/user-attachments/assets/e85ff56a-48b9-48b8-b614-8f3dce2231a3" />
+
 <img width="840" height="472" alt="3" src="https://github.com/user-attachments/assets/6bbe43da-06d5-48b9-8eb9-606937697b78" />
 
 
