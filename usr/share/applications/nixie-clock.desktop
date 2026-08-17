@@ -1,8 +1,0 @@
-[Desktop Entry]
-Name=Nixie Clock
-Comment=Sleek Desktop Nixie Tube Clock Widget
-Exec=nixie-clock
-Icon=preferences-system-time
-Terminal=false
-Type=Application
-Categories=Utility;Clock;GTK;
