@@ -71,4 +71,4 @@ Run `nixie-clock --help` for the full list of available command-line flags.
 
 ## Author
 
-_Mark Ulrich_ ► https://forum.puppylinux.com/viewtopic.php?t=17295
+_Mark Ulrich_ ► [forum.puppylinux](https://forum.puppylinux.com/viewtopic.php?t=17295)
