@@ -64,6 +64,9 @@ nixie-clock --layout 1 --scale 1.5 --use-12h --color "#FF3300"
 
 Run `nixie-clock --help` for the full list of available command-line flags.
 
+## Changelog:
+1.1.1 option to hide the "tubes" background
+1.1.2 added support for wayland bottom layer
 
 ## Author
 
