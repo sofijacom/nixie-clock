@@ -79,6 +79,16 @@ public class OptionsDialog : Gtk.Dialog {
         });
         content.pack_start(seconds_check, false, false, 0);
         
+        // 2.6 Show Tube Background
+        var bg_check = new Gtk.CheckButton.with_label("Show Tube Background");
+        bg_check.active = clock_window.show_tube_background;
+        bg_check.toggled.connect(() => {
+            clock_window.show_tube_background = bg_check.active;
+            clock_window.queue_redraw();
+            clock_window.save_config();
+        });
+        content.pack_start(bg_check, false, false, 0);
+        
         // 2.7 Animation Mode (CPU Optimization)
         var anim_box = new Gtk.Box(Gtk.Orientation.HORIZONTAL, 12);
         anim_box.pack_start(new Gtk.Label("Animation / CPU Mode:"), false, false, 0);
@@ -271,6 +281,7 @@ public class NixieClockWindow : Gtk.Window {
     public int clock_style = 1;
     public bool use_24h = false;
     public bool show_seconds = true;
+    public bool show_tube_background = true;
     public int animation_mode = 1;
     public int am_pm_alignment = 0;
     public new double scale_factor = 1.0;
@@ -320,7 +331,19 @@ public class NixieClockWindow : Gtk.Window {
         }
         
         set_decorated(false);
-        set_type_hint(Gdk.WindowTypeHint.DOCK);
+        
+        // --- WAYLAND & X11 FIXES ---
+        // 1. Change type hint to UTILITY (DOCK can force foreground in XWayland)
+        set_type_hint(Gdk.WindowTypeHint.UTILITY);
+        
+        // 2. Native Wayland layer-shell support (if compiled with gtk-layer-shell)
+        #if HAVE_GTK_LAYER_SHELL
+        if (GtkLayerShell.is_supported()) {
+            GtkLayerShell.init_for_window(this);
+            GtkLayerShell.set_layer(this, GtkLayerShell.Layer.BOTTOM);
+        }
+        #endif
+        
         set_app_paintable(true);
         
         var visual = get_screen().get_rgba_visual();
@@ -358,6 +381,7 @@ public class NixieClockWindow : Gtk.Window {
                 if (kf.has_key("Settings", "clock_style")) clock_style = kf.get_integer("Settings", "clock_style");
                 if (kf.has_key("Settings", "use_24h")) use_24h = kf.get_boolean("Settings", "use_24h");
                 if (kf.has_key("Settings", "show_seconds")) show_seconds = kf.get_boolean("Settings", "show_seconds");
+                if (kf.has_key("Settings", "show_tube_background")) show_tube_background = kf.get_boolean("Settings", "show_tube_background");
                 if (kf.has_key("Settings", "animation_mode")) animation_mode = kf.get_integer("Settings", "animation_mode");
                 if (kf.has_key("Settings", "am_pm_alignment")) am_pm_alignment = kf.get_integer("Settings", "am_pm_alignment");
                 if (kf.has_key("Settings", "scale_factor")) scale_factor = kf.get_double("Settings", "scale_factor");
@@ -406,6 +430,7 @@ public class NixieClockWindow : Gtk.Window {
             kf.set_integer("Settings", "clock_style", clock_style);
             kf.set_boolean("Settings", "use_24h", use_24h);
             kf.set_boolean("Settings", "show_seconds", show_seconds);
+            kf.set_boolean("Settings", "show_tube_background", show_tube_background);
             kf.set_integer("Settings", "animation_mode", animation_mode);
             kf.set_integer("Settings", "am_pm_alignment", am_pm_alignment);
             kf.set_double("Settings", "scale_factor", scale_factor);
@@ -613,6 +638,8 @@ public class NixieClockWindow : Gtk.Window {
     }
     
     private void draw_tube_background(Cairo.Context cr, double x, double y, double w, double h) {
+        if (!show_tube_background) return;
+
         if (clock_style == 1) {
             // ORIGINAL AUTHENTIC REAL TUBES BACKGROUND
             var pat = new Cairo.Pattern.linear(x, y, x + w, y + h);
@@ -650,48 +677,50 @@ public class NixieClockWindow : Gtk.Window {
     }
     
     private void draw_tube(Cairo.Context cr, double x, double y, double w, double h, string digit_str) {
-        draw_tube_background(cr, x, y, w, h);
-        
-        if (clock_style == 1) {
-            // ORIGINAL AUTHENTIC TUBE GLASS BORDER & WIRE MESH
-            cr.set_source_rgba(0.4, 0.3, 0.2, 0.8);
-            cr.set_line_width(1.5 * scale_factor);
-            cr.stroke();
+        if (show_tube_background) {
+            draw_tube_background(cr, x, y, w, h);
             
-            // Original grid mesh overlay
-            cr.set_source_rgba(0.3, 0.2, 0.1, 0.25);
-            cr.set_line_width(0.5 * scale_factor);
-            double grid_step = 6.0 * scale_factor;
-            for (double gx = x + (4.0 * scale_factor); gx < x + w - (4.0 * scale_factor); gx += grid_step) {
-                cr.move_to(gx, y + (6.0 * scale_factor));
-                cr.line_to(gx, y + h - (6.0 * scale_factor));
+            if (clock_style == 1) {
+                // ORIGINAL AUTHENTIC TUBE GLASS BORDER & WIRE MESH
+                cr.set_source_rgba(0.4, 0.3, 0.2, 0.8);
+                cr.set_line_width(1.5 * scale_factor);
                 cr.stroke();
-            }
-            for (double gy = y + (6.0 * scale_factor); gy < y + h - (6.0 * scale_factor); gy += grid_step) {
-                cr.move_to(x + (4.0 * scale_factor), gy);
-                cr.line_to(x + w - (4.0 * scale_factor), gy);
-                cr.stroke();
-            }
-        } else {
-            // NEW STYLES BORDER & MESH
-            if (clock_style == 2 || clock_style == 4) {
-                cr.set_source_rgba(current_color.r * 0.9, current_color.g * 0.9, current_color.b * 0.9, 0.95);
-            } else if (clock_style == 3) {
-                cr.set_source_rgba(current_color.r * 0.85, current_color.g * 0.85, current_color.b * 0.85, 0.9);
-            } else {
-                cr.set_source_rgba(0.25, 0.65, 0.85, 0.85);
-            }
-            cr.set_line_width(((clock_style == 2 || clock_style == 4) ? 2.0 : 1.5) * scale_factor);
-            cr.stroke();
-            
-            if (clock_style == 2 || clock_style == 4) {
-                cr.set_source_rgba(current_color.r, current_color.g, current_color.b, (clock_style == 4) ? 0.14 : 0.15);
+                
+                // Original grid mesh overlay
+                cr.set_source_rgba(0.3, 0.2, 0.1, 0.25);
                 cr.set_line_width(0.5 * scale_factor);
-                double step = (clock_style == 4) ? (4.5 * scale_factor) : (10.0 * scale_factor);
-                for (double i = y + (8 * scale_factor); i < y + h - (8 * scale_factor); i += step) {
-                    cr.move_to(x + (3.0 * scale_factor), i);
-                    cr.line_to(x + w - (3.0 * scale_factor), i);
+                double grid_step = 6.0 * scale_factor;
+                for (double gx = x + (4.0 * scale_factor); gx < x + w - (4.0 * scale_factor); gx += grid_step) {
+                    cr.move_to(gx, y + (6.0 * scale_factor));
+                    cr.line_to(gx, y + h - (6.0 * scale_factor));
                     cr.stroke();
+                }
+                for (double gy = y + (6.0 * scale_factor); gy < y + h - (6.0 * scale_factor); gy += grid_step) {
+                    cr.move_to(x + (4.0 * scale_factor), gy);
+                    cr.line_to(x + w - (4.0 * scale_factor), gy);
+                    cr.stroke();
+                }
+            } else {
+                // NEW STYLES BORDER & MESH
+                if (clock_style == 2 || clock_style == 4) {
+                    cr.set_source_rgba(current_color.r * 0.9, current_color.g * 0.9, current_color.b * 0.9, 0.95);
+                } else if (clock_style == 3) {
+                    cr.set_source_rgba(current_color.r * 0.85, current_color.g * 0.85, current_color.b * 0.85, 0.9);
+                } else {
+                    cr.set_source_rgba(0.25, 0.65, 0.85, 0.85);
+                }
+                cr.set_line_width(((clock_style == 2 || clock_style == 4) ? 2.0 : 1.5) * scale_factor);
+                cr.stroke();
+                
+                if (clock_style == 2 || clock_style == 4) {
+                    cr.set_source_rgba(current_color.r, current_color.g, current_color.b, (clock_style == 4) ? 0.14 : 0.15);
+                    cr.set_line_width(0.5 * scale_factor);
+                    double step = (clock_style == 4) ? (4.5 * scale_factor) : (10.0 * scale_factor);
+                    for (double i = y + (8 * scale_factor); i < y + h - (8 * scale_factor); i += step) {
+                        cr.move_to(x + (3.0 * scale_factor), i);
+                        cr.line_to(x + w - (3.0 * scale_factor), i);
+                        cr.stroke();
+                    }
                 }
             }
         }
@@ -785,45 +814,47 @@ public class NixieClockWindow : Gtk.Window {
     }
     
     private void draw_am_pm_tube(Cairo.Context cr, double x, double y, double w, double h, bool is_pm) {
-        draw_tube_background(cr, x, y, w, h);
-        
-        if (clock_style == 1) {
-            cr.set_source_rgba(0.4, 0.3, 0.2, 0.8);
-            cr.set_line_width(1.2 * scale_factor);
-            cr.stroke();
+        if (show_tube_background) {
+            draw_tube_background(cr, x, y, w, h);
             
-            cr.set_source_rgba(0.3, 0.2, 0.1, 0.25);
-            cr.set_line_width(0.5 * scale_factor);
-            double grid_step = 6.0 * scale_factor;
-            for (double gx = x + (3.0 * scale_factor); gx < x + w - (3.0 * scale_factor); gx += grid_step) {
-                cr.move_to(gx, y + (4.0 * scale_factor));
-                cr.line_to(gx, y + h - (4.0 * scale_factor));
+            if (clock_style == 1) {
+                cr.set_source_rgba(0.4, 0.3, 0.2, 0.8);
+                cr.set_line_width(1.2 * scale_factor);
                 cr.stroke();
-            }
-            for (double gy = y + (4.0 * scale_factor); gy < y + h - (4.0 * scale_factor); gy += grid_step) {
-                cr.move_to(x + (3.0 * scale_factor), gy);
-                cr.line_to(x + w - (3.0 * scale_factor), gy);
-                cr.stroke();
-            }
-        } else {
-            if (clock_style == 2 || clock_style == 4) {
-                cr.set_source_rgba(current_color.r * 0.9, current_color.g * 0.9, current_color.b * 0.9, 0.95);
-            } else if (clock_style == 3) {
-                cr.set_source_rgba(current_color.r * 0.85, current_color.g * 0.85, current_color.b * 0.85, 0.9);
-            } else {
-                cr.set_source_rgba(0.25, 0.65, 0.85, 0.85);
-            }
-            cr.set_line_width(((clock_style == 2 || clock_style == 4) ? 1.8 : 1.2) * scale_factor);
-            cr.stroke();
-            
-            if (clock_style == 2 || clock_style == 4) {
-                cr.set_source_rgba(current_color.r, current_color.g, current_color.b, (clock_style == 4) ? 0.14 : 0.15);
+                
+                cr.set_source_rgba(0.3, 0.2, 0.1, 0.25);
                 cr.set_line_width(0.5 * scale_factor);
-                double step = (clock_style == 4) ? (4.5 * scale_factor) : (10.0 * scale_factor);
-                for (double i = y + (5 * scale_factor); i < y + h - (5 * scale_factor); i += step) {
-                    cr.move_to(x + (2.5 * scale_factor), i);
-                    cr.line_to(x + w - (2.5 * scale_factor), i);
+                double grid_step = 6.0 * scale_factor;
+                for (double gx = x + (3.0 * scale_factor); gx < x + w - (3.0 * scale_factor); gx += grid_step) {
+                    cr.move_to(gx, y + (4.0 * scale_factor));
+                    cr.line_to(gx, y + h - (4.0 * scale_factor));
                     cr.stroke();
+                }
+                for (double gy = y + (4.0 * scale_factor); gy < y + h - (4.0 * scale_factor); gy += grid_step) {
+                    cr.move_to(x + (3.0 * scale_factor), gy);
+                    cr.line_to(x + w - (3.0 * scale_factor), gy);
+                    cr.stroke();
+                }
+            } else {
+                if (clock_style == 2 || clock_style == 4) {
+                    cr.set_source_rgba(current_color.r * 0.9, current_color.g * 0.9, current_color.b * 0.9, 0.95);
+                } else if (clock_style == 3) {
+                    cr.set_source_rgba(current_color.r * 0.85, current_color.g * 0.85, current_color.b * 0.85, 0.9);
+                } else {
+                    cr.set_source_rgba(0.25, 0.65, 0.85, 0.85);
+                }
+                cr.set_line_width(((clock_style == 2 || clock_style == 4) ? 1.8 : 1.2) * scale_factor);
+                cr.stroke();
+                
+                if (clock_style == 2 || clock_style == 4) {
+                    cr.set_source_rgba(current_color.r, current_color.g, current_color.b, (clock_style == 4) ? 0.14 : 0.15);
+                    cr.set_line_width(0.5 * scale_factor);
+                    double step = (clock_style == 4) ? (4.5 * scale_factor) : (10.0 * scale_factor);
+                    for (double i = y + (5 * scale_factor); i < y + h - (5 * scale_factor); i += step) {
+                        cr.move_to(x + (2.5 * scale_factor), i);
+                        cr.line_to(x + w - (2.5 * scale_factor), i);
+                        cr.stroke();
+                    }
                 }
             }
         }
