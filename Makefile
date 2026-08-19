@@ -18,7 +18,7 @@
 CC = valac
 CFLAGS = --pkg gtk+-3.0 --pkg cairo --pkg gdk-3.0 --pkg pangocairo --Xcc=-lm
 TARGET = nixie-clock
-VERSION = 1.1.2
+VERSION = 1.3.0
 SRC = nixie_clock.vala
 PREFIX ?= /usr
 
