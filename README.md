@@ -64,7 +64,7 @@ nixie-clock --layout 1 --scale 1.5 --use-12h --color "#FF3300"
 
 Run `nixie-clock --help` for the full list of available command-line flags.
 
-### ▷ [Changelog:](https://github.com/sofijacom/nixie-clock/blob/main/CHANGELOG.md)
+### ⮞⮞[Changelog](https://github.com/sofijacom/nixie-clock/blob/main/CHANGELOG.md)⮜⮜
 
 - 1.1.1
 - 1.1.2 
