@@ -66,10 +66,8 @@ Run `nixie-clock --help` for the full list of available command-line flags.
 
 ### ▷ [Changelog:](https://github.com/sofijacom/nixie-clock/blob/main/CHANGELOG.md)
 
-- 1.1.1 option to hide the "tubes" background
-
-- 1.1.2 added support for wayland bottom layer
-
+- 1.1.1
+- 1.1.2 
 - 1.3.0
 
 
