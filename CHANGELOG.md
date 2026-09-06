@@ -11,3 +11,4 @@
   - It uses a condition to check if it runs in wayland, then sets the class hint to UTILITY, while in X11 it uses DOCK. Also other Gtk and WM hints changed.
   - I found some settings not so logic so reworked them to be more "intuitive", and added more like glow-thickness.
 - 1.3.1
+- 1.3.3
