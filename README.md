@@ -70,7 +70,7 @@ Run `nixie-clock --help` for the full list of available command-line flags.
   - 1.1.2 
     - 1.3.0
       - 1.3.1
-
+        - 1.3.3
 
 ## Author
 
