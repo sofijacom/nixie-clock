@@ -12,3 +12,4 @@
   - I found some settings not so logic so reworked them to be more "intuitive", and added more like glow-thickness.
 - 1.3.1
 - 1.3.3
+  - added window layer selection in the options
